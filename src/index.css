@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Neumorphism Shadow */
+.shadow-neumorphism {
+    box-shadow: 9px 9px 18px #c8c8c8, -9px -9px 18px #ffffff;
+  }
+  
+  /* Hover Effect for Neumorphism */
+  .shadow-neumorphism-hover {
+    box-shadow: 6px 6px 12px #c8c8c8, -6px -6px 12px #ffffff;
+  }

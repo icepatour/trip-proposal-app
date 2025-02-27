@@ -1,16 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import Navbar from './components/Navbar';
+import Header from './components/Header';
+import TallyForm from './components/TallyForm';
+import FilterBar from './components/FilterBar';
+import TripCard from './components/TripCard';
 
 function App() {
   const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [filters, setFilters] = useState({
+    startDate: null,
+    endDate: null,
+    startingCity: '',
+    tripType: '',
+    destinations: [],
+  });
+  const [popoverData, setPopoverData] = useState(null);
 
   useEffect(() => {
     const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${import.meta.env.VITE_GOOGLE_SHEET_ID}/values/London&other_start?key=${import.meta.env.VITE_GOOGLE_API_KEY}`;
-
     axios.get(SHEET_URL)
       .then(response => {
         const rows = response.data.values;
-        const headers = rows[0]; // Extract headers
+        const headers = rows[0];
         const formattedData = rows.slice(1).map(row => {
           const obj = {};
           headers.forEach((header, index) => {
@@ -19,88 +32,110 @@ function App() {
           return obj;
         });
         setData(formattedData);
+        setFilteredData(formattedData);
       })
       .catch(error => console.error('Error fetching data:', error));
   }, []);
 
-  // Function to copy ID to clipboard
-  const copyToClipboard = (id) => {
-    navigator.clipboard.writeText(id).then(() => {
-      alert(`Copied ID: ${id}`);
-    }).catch(err => {
-      console.error('Failed to copy ID:', err);
-    });
+  const handleFilterChange = (e, isDestinations = false) => {
+    const { name, value } = e.target;
+    if (isDestinations) {
+      setFilters({ ...filters, destinations: value.split(',').map(dest => dest.trim()) });
+    } else {
+      setFilters({ ...filters, [name]: value });
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = data;
+
+    if (filters.startDate && filters.endDate) {
+      filtered = filtered.filter(item => {
+        const itemDate = new Date(item['ช่วงวันที่ต้องการออกเดินทาง']);
+        return itemDate >= new Date(filters.startDate) && itemDate <= new Date(filters.endDate);
+      });
+    }
+
+    if (filters.startingCity) {
+      filtered = filtered.filter(item => item['เริ่มต้นจากเมืองไหน?'] === filters.startingCity);
+    }
+
+    if (filters.tripType) {
+      filtered = filtered.filter(item => item['ประเภทของทริป'] === filters.tripType);
+    }
+
+    if (filters.destinations.length > 0) {
+      filtered = filtered.filter(item => {
+        const destinations = item['เมืองที่ต้องการไปมีอะไรบ้าง?']?.split(', ') || [];
+        return filters.destinations.every(dest => destinations.includes(dest));
+      });
+    }
+
+    setFilteredData(filtered);
+  };
+
+  const showPopover = (item) => {
+    setPopoverData(item);
+  };
+
+  const hidePopover = () => {
+    setPopoverData(null);
   };
 
   return (
-    <div className="p-6 bg-gradient-to-br from-blue-50 via-gray-50 to-blue-100 min-h-screen">
+    <div className="p-6 bg-[#E0E5EC] min-h-screen relative shadow-neumorphism">
+      {/* Navbar */}
+      <Navbar />
+
       {/* Header Section */}
       <h1 className="text-3xl font-bold text-center text-blue-700 mb-8">Trip Proposals</h1>
 
-      {/* Grid of Trip Boxes */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {data.map((item, index) => (
-          <div
-            key={index}
-            className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
-          >
-            {/* Top Section: ID and Copy Button */}
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-blue-800">{item['ID']}</h2>
-              <button
-                onClick={() => copyToClipboard(item['ID'])}
-                className="px-3 py-1 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 transition-colors"
-              >
-                Copy
-              </button>
-            </div>
-
-            {/* Body Section: Details */}
-            <div className="space-y-2 text-sm text-gray-700">
-              {/* Person Icon with Tooltip and Trip Type */}
-              <div className="relative group flex items-center space-x-2">
-                {/* Trip Type */}
-                <span className="text-gray-700">{item['ประเภทของทริป'] || 'N/A'}</span>
-
-                {/* Word "with" */}
-                <span className="text-gray-500">with</span>
-
-                {/* Person Icon */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-6 h-6 text-gray-500 cursor-pointer"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 12a7.5 7.5 0 0015 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m16.5 0H21"
-                  />
-                </svg>
-
-                {/* Tooltip on Hover */}
-                <div className="absolute top-full left-0 mt-2 p-2 bg-gray-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                  <p><strong>ชื่อผู้จอง:</strong> {item['Name'] || 'N/A'}</p>
-                  <p><strong>เพศ:</strong> {item['เพศ'] || 'N/A'}</p>
-                  <p><strong>ช่วงอายุ:</strong> {item['ช่วงอายุ'] || 'N/A'}</p>
-                </div>
-              </div>
-
-              {/* Other Details */}
-              <p><strong>วันที่ต้องการออกเดินทาง:</strong> {item['ช่วงวันที่ต้องการออกเดินทาง'] || 'N/A'}</p>
-              <p><strong>ถึงวันที่:</strong> {item['ถึงวันที่'] || 'N/A'}</p>
-              <p><strong>เริ่มต้นจากเมืองไหน?:</strong> {item['เริ่มต้นจากเมืองไหน?'] || 'N/A'}</p>
-              <p><strong>จำนวนวันท่องเที่ยว:</strong> {item['จำนวน วัน ท่องเที่ยว'] || 'N/A'}</p>
-              <p><strong>เมืองที่ต้องการไปมีอะไรบ้าง?:</strong> {item['เมืองที่ต้องการไปมีอะไรบ้าง?'] || 'N/A'}</p>
-              <p><strong>No. of form:</strong> {item['No. of form'] || 'N/A'}</p>
-              <p><strong>Total no. of Traveler:</strong> {item['Total no. of Traveler'] || 'N/A'}</p>
-            </div>
-          </div>
-        ))}
+      {/* Tally Form */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <TallyForm />
       </div>
+
+      {/* Filter Bar */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <FilterBar
+          filters={filters}
+          handleFilterChange={handleFilterChange}
+          applyFilters={applyFilters}
+        />
+      </div>
+
+      {/* Centered Container with Max Width */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredData.map((item, index) => (
+            <TripCard key={index} item={item} showPopover={showPopover} />
+          ))}
+        </div>
+      </div>
+
+      {/* Popover */}
+      {popoverData && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={hidePopover}
+        >
+          <div
+            className="bg-[#E0E5EC] p-6 rounded-2xl shadow-neumorphism max-w-sm text-gray-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold mb-4">Details</h3>
+            <p><strong>ชื่อผู้จอง:</strong> {popoverData['Name'] || 'N/A'}</p>
+            <p><strong>เพศ:</strong> {popoverData['เพศ'] || 'N/A'}</p>
+            <p><strong>ช่วงอายุ:</strong> {popoverData['ช่วงอายุ'] || 'N/A'}</p>
+            <button
+              className="mt-4 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+              onClick={hidePopover}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
