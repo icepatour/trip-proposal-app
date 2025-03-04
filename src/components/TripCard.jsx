@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 
-function TripCard({ item, showPopover }) {
+function TripCard({ item }) {
   const [isCopied, setIsCopied] = useState(false); // State to track "Copied" visibility
+  const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal visibility
 
   // Function to copy ID to clipboard and show "Copied" notification
   const handleCopy = (id) => {
@@ -14,60 +15,118 @@ function TripCard({ item, showPopover }) {
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-      {/* Top Section: ID and Copy Button */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-blue-800">{item['ID']}</h2>
+    <div>
+      {/* Main Card */}
+      <div
+        className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer relative"
+        onClick={() => setIsModalOpen(true)} // Open modal on click
+      >
+        {/* Starting City */}
+        <div className="text-lg text-sm text-gray-800 mb-2">
+        {item['ประเภทของทริป'] || 'N/A'} from {item['เริ่มต้นจากเมืองไหน?'] || 'N/A'}
+        </div>
+
+        {/* ID */}
+        <h2 className="text-xl font-bold text-black mb-4">{item['ID']}</h2>
+
+        {/* Body Section: Minimal Details */}
+        <div className="space-y-2 text-sm text-gray-700">
+          {/* Traveler Count with Person Icon */}
+          <div className="flex items-center space-x-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 text-gray-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+            <span>{item['Total no. of Traveler'] || 'N/A'}</span>
+          </div>
+
+          {/* Trip Type */}
+          <p>{item['ประเภทของทริป'] || 'N/A'}</p>
+
+          {/* Travel Dates */}
+          <p>{item['ช่วงวันที่ต้องการออกเดินทาง'] || 'N/A'} - {item['ถึงวันที่'] || 'N/A'}</p>
+
+          {/* Destinations */}
+          <p>{item['เมืองที่ต้องการไปมีอะไรบ้าง?'] || 'N/A'}</p>
+        </div>
+
+        {/* Copy Button */}
         <button
-          onClick={() => handleCopy(item['ID'])}
-          className="px-3 py-1 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 transition-colors"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent opening modal when copying
+            handleCopy(item['ID']);
+          }}
+          className="absolute top-4 right-4 px-3 py-1 bg-black text-white text-sm font-medium rounded-md hover:bg-blue-600 transition-colors"
         >
           Copy
         </button>
+
+        {/* "Copied" Notification */}
+        {isCopied && (
+          <div className="absolute top-12 right-4 bg-green-500 text-white text-xs px-2 py-1 rounded-md">
+            Copied!
+          </div>
+        )}
       </div>
 
-      {/* "Copied" Notification */}
-      {isCopied && (
-        <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-md">
-          Copied
+      {/* Modal for Full Details */}
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setIsModalOpen(false)} // Close modal when clicking outside
+        >
+          <div
+            className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full relative"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+
+            {/* Modal Content */}
+            <h2 className="text-xl font-bold text-black mb-4">Trip Details</h2>
+            <div className="space-y-2 text-sm text-gray-700">
+              <p><strong>ID:</strong> {item['ID'] || 'N/A'}</p>
+              <p><strong>จำนวนผู้เดินทาง:</strong> {item['No. of Traveler'] || 'N/A'}</p>
+              <p><strong>ชื่อผู้จอง:</strong> {item['Name'] || 'N/A'}</p>
+              <p><strong>เพศ:</strong> {item['เพศ'] || 'N/A'}</p>
+              <p><strong>ช่วงอายุ:</strong> {item['ช่วงอายุ'] || 'N/A'}</p>
+              <p><strong>ช่วงวันที่ต้องการออกเดินทาง:</strong> {item['ช่วงวันที่ต้องการออกเดินทาง'] || 'N/A'} - {item['ถึงวันที่'] || 'N/A'}</p>
+              <p><strong>เริ่มต้นจากเมืองไหน?:</strong> {item['เริ่มต้นจากเมืองไหน?'] || 'N/A'}</p>
+              <p><strong>ประเภทของทริป:</strong> {item['ประเภทของทริป'] || 'N/A'}</p>
+              <p><strong>จำนวน วัน ท่องเที่ยว:</strong> {item['จำนวน วัน ท่องเที่ยว'] || 'N/A'}</p>
+              <p><strong>เมืองที่ต้องการไปมีอะไรบ้าง?:</strong> {item['เมืองที่ต้องการไปมีอะไรบ้าง?'] || 'N/A'}</p>
+            </div>
+          </div>
         </div>
       )}
-
-      {/* Body Section: Details */}
-      <div className="space-y-2 text-sm text-gray-700">
-        {/* Person Icon with Click-to-Show Popover */}
-        <div className="relative flex items-center space-x-2">
-          {/* Trip Type */}
-          <span className="text-gray-700">{item['ประเภทของทริป'] || 'N/A'}</span>
-          {/* Word "with" */}
-          <span className="text-gray-500">with</span>
-          {/* Person Icon */}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-6 h-6 text-gray-500 cursor-pointer"
-            onClick={() => showPopover(item)} // Show popover on click
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 12a7.5 7.5 0 0015 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m16.5 0H21"
-            />
-          </svg>
-        </div>
-
-        {/* Other Details */}
-        <p><strong>วันที่ต้องการออกเดินทาง:</strong> {item['ช่วงวันที่ต้องการออกเดินทาง'] || 'N/A'}</p>
-        <p><strong>ถึงวันที่:</strong> {item['ถึงวันที่'] || 'N/A'}</p>
-        <p><strong>เริ่มต้นจากเมืองไหน?:</strong> {item['เริ่มต้นจากเมืองไหน?'] || 'N/A'}</p>
-        <p><strong>จำนวนวันท่องเที่ยว:</strong> {item['จำนวน วัน ท่องเที่ยว'] || 'N/A'}</p>
-        <p><strong>เมืองที่ต้องการไปมีอะไรบ้าง?:</strong> {item['เมืองที่ต้องการไปมีอะไรบ้าง?'] || 'N/A'}</p>
-        <p><strong>No. of form:</strong> {item['No. of form'] || 'N/A'}</p>
-        <p><strong>Total no. of Traveler:</strong> {item['Total no. of Traveler'] || 'N/A'}</p>
-      </div>
     </div>
   );
 }

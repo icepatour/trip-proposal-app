@@ -5,6 +5,7 @@ import Header from './components/Header';
 import TallyForm from './components/TallyForm';
 import FilterBar from './components/FilterBar';
 import TripCard from './components/TripCard';
+import Footer from './components/Footer';
 
 function App() {
   const [data, setData] = useState([]);
@@ -83,7 +84,7 @@ function App() {
   };
 
   return (
-    <div className="p-6 bg-[#E0E5EC] min-h-screen relative shadow-neumorphism">
+    <div className="mt-16 bg-[#E0E5EC] min-h-screen relative shadow-neumorphism">
       {/* Navbar */}
       <Navbar />
 
@@ -136,6 +137,7 @@ function App() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   );
 }
